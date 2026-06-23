@@ -1,0 +1,33 @@
+# --- core ---
+requests>=2.31
+urllib3>=2.0
+tenacity>=8.2
+pydantic>=2.5
+pydantic-settings>=2.1
+python-dotenv>=1.0
+
+# --- database ---
+SQLAlchemy>=2.0
+psycopg2-binary>=2.9
+
+# --- data / parsing ---
+pandas>=2.1
+numpy>=1.26
+lxml>=5.0
+beautifulsoup4>=4.12
+html5lib>=1.1
+pdfplumber>=0.10        # annual-report text extraction
+
+# --- scheduling ---
+APScheduler>=3.10
+
+# --- dashboard ---
+streamlit>=1.30
+plotly>=5.18
+
+# --- local LLM (Ollama via HTTP; no SDK lock-in) ---
+# Install Ollama separately: https://ollama.com  then `ollama pull qwen2.5:14b-instruct`
+
+# --- dev ---
+pytest>=7.4
+ruff>=0.1

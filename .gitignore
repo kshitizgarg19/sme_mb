@@ -1,0 +1,25 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+data/
+*.log
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.DS_Store
+
+# secrets — never commit
+.env
+.env.*
+*.pem
+web/.env*
+
+# node / next / vercel
+node_modules/
+.next/
+.vercel
+out/
+
+# data, logs, cache
+data/

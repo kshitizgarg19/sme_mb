@@ -1,0 +1,40 @@
+# One command brings up Postgres + Ollama for local development:
+#   docker compose up -d
+# Then load the schema and pull a model:
+#   make init-db
+#   docker exec -it sme_ollama ollama pull qwen2.5:14b-instruct
+services:
+  db:
+    image: postgres:16
+    container_name: sme_postgres
+    environment:
+      POSTGRES_USER: sme
+      POSTGRES_PASSWORD: sme
+      POSTGRES_DB: sme_scanner
+    ports:
+      - "5432:5432"
+    volumes:
+      - sme_pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sme -d sme_scanner"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: sme_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - sme_ollama:/root/.ollama
+    # Uncomment for GPU acceleration (NVIDIA):
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices: [{driver: nvidia, count: all, capabilities: [gpu]}]
+
+volumes:
+  sme_pgdata:
+  sme_ollama:
