@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getRedFlags } from "@/lib/queries";
 import { score, ratio, int } from "@/lib/format";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
 
 export default async function RedFlagsPage() {
   const rows = await getRedFlags();

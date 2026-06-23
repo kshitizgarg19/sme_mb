@@ -2,8 +2,9 @@ import { getLatestScores, getStats } from "@/lib/queries";
 import { StatCards } from "@/components/StatCards";
 import { RankTable } from "@/components/RankTable";
 
-// Always read fresh from Postgres — the Python pipeline updates it on each scan.
-export const dynamic = "force-dynamic";
+// Pre-render at build into static HTML (served from CDN — no DB at request time,
+// so it's instant). Data is a snapshot; re-deploy to refresh after a new scan.
+export const dynamic = "force-static";
 
 export default async function Home() {
   const [rows, stats] = await Promise.all([getLatestScores(), getStats()]);

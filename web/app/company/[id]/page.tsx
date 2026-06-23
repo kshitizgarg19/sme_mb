@@ -15,7 +15,20 @@ import { InvestorsPanel } from "@/components/InvestorsPanel";
 import { perYearMetrics, computeScenario, type AnnualRow } from "@/lib/analysis";
 import { score, pct, ratio, crore, int, toNum } from "@/lib/format";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const dynamicParams = true; // non-prebuilt ids render on demand, then cache
+
+// Pre-build the top-ranked companies into static HTML at build (instant loads);
+// the long tail renders on first visit and is then cached (dynamicParams).
+export async function generateStaticParams() {
+  const { sql } = await import("@/lib/db");
+  const rows = (await sql`
+    SELECT company_id FROM multibagger_scores
+    WHERE as_of_date = (SELECT max(as_of_date) FROM multibagger_scores)
+    ORDER BY rank_overall LIMIT 120
+  `) as { company_id: number }[];
+  return rows.map((r) => ({ id: String(r.company_id) }));
+}
 
 export default async function CompanyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
