@@ -29,6 +29,16 @@ async function getJSON<T>(path: string): Promise<T | null> {
 export type NewsItem = { headline: string; category: string | null; pdf_url: string | null; at: string | null };
 
 export const fetchQuote = (id: number) => getJSON<Quote>(`/live/quote/${id}`);
+
+/** Batch live quotes keyed by company_id. Chunked (XTS caps instruments/call). */
+export async function fetchQuotes(ids: number[]): Promise<Record<string, Quote>> {
+  const chunks: number[][] = [];
+  for (let i = 0; i < ids.length; i += 50) chunks.push(ids.slice(i, i + 50));
+  const parts = await Promise.all(
+    chunks.map((c) => getJSON<Record<string, Quote>>(`/live/quotes?ids=${c.join(",")}`)),
+  );
+  return Object.assign({}, ...parts.filter(Boolean));
+}
 export const fetchDepth = (id: number) => getJSON<Depth>(`/live/depth/${id}`);
 export const fetchOhlc = (id: number, days = 180, compression = 86400) =>
   getJSON<{ candles: Candle[] }>(`/live/ohlc/${id}?days=${days}&compression=${compression}`);

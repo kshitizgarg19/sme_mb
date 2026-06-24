@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ScoreRow } from "@/lib/queries";
+import { fetchQuotes } from "@/lib/live";
 import { Band, scoreColor } from "./Band";
 import { crore, score } from "@/lib/format";
 
@@ -18,6 +19,22 @@ export function RankTable({ rows }: { rows: ScoreRow[] }) {
   const [q, setQ] = useState("");
   const [band, setBand] = useState<(typeof BANDS)[number]>("All");
   const [exch, setExch] = useState<(typeof EXCH)[number]>("All");
+  const [live, setLive] = useState<Record<string, { ltp: number | null; volume: number | null }>>({});
+
+  // Poll live price + daily volume for the listed names. Works on the local
+  // dashboard (live service running); on the public/static site it stays "—".
+  useEffect(() => {
+    let on = true;
+    const ids = rows.map((r) => r.company_id);
+    const tick = async () => {
+      const q = await fetchQuotes(ids);
+      if (on) setLive(q as Record<string, { ltp: number | null; volume: number | null }>);
+    };
+    tick();
+    const h = setInterval(tick, 10000);
+    return () => { on = false; clearInterval(h); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [sortKey, setSortKey] = useState<SortKey>("rank_overall");
   const [asc, setAsc] = useState(true);
 
@@ -82,6 +99,8 @@ export function RankTable({ rows }: { rows: ScoreRow[] }) {
               <Th k="rank_overall" className="w-12">#</Th>
               <th className="px-3 py-2 font-medium text-zinc-400">Company</th>
               <Th k="market_cap" className="text-right">M.Cap</Th>
+              <th className="px-3 py-2 text-right font-medium text-zinc-400">Price</th>
+              <th className="px-3 py-2 text-right font-medium text-zinc-400">Vol</th>
               <Th k="total_score" className="text-right">Score</Th>
               <Th k="growth_score" className="hidden text-right md:table-cell">Growth</Th>
               <Th k="profitability_score" className="hidden text-right md:table-cell">Profit</Th>
@@ -106,6 +125,10 @@ export function RankTable({ rows }: { rows: ScoreRow[] }) {
                   </div>
                 </td>
                 <td className="tnum px-3 py-2.5 text-right text-zinc-300">{crore(r.market_cap)}</td>
+                <td className="tnum px-3 py-2.5 text-right text-zinc-200">
+                  {live[r.company_id]?.ltp != null ? `₹${live[r.company_id].ltp}` : "—"}
+                </td>
+                <td className="tnum px-3 py-2.5 text-right text-zinc-400">{vol(live[r.company_id]?.volume)}</td>
                 <td className="px-3 py-2.5 text-right">
                   <span className={`tnum text-base font-semibold ${scoreColor(r.total_score)}`}>{score(r.total_score)}</span>
                   <span className="ml-2 align-middle"><Band band={r.band} /></span>
@@ -121,7 +144,7 @@ export function RankTable({ rows }: { rows: ScoreRow[] }) {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-3 py-10 text-center text-zinc-500">
+                <td colSpan={11} className="px-3 py-10 text-center text-zinc-500">
                   No companies match. The scan may still be running — refresh in a bit.
                 </td>
               </tr>
@@ -131,6 +154,15 @@ export function RankTable({ rows }: { rows: ScoreRow[] }) {
       </div>
     </div>
   );
+}
+
+// Compact Indian volume: 83000 -> 83K, 250000 -> 2.5L, 12000000 -> 1.2Cr
+function vol(v: number | null | undefined): string {
+  if (v == null) return "—";
+  if (v >= 1e7) return `${(v / 1e7).toFixed(1)}Cr`;
+  if (v >= 1e5) return `${(v / 1e5).toFixed(1)}L`;
+  if (v >= 1e3) return `${(v / 1e3).toFixed(0)}K`;
+  return String(v);
 }
 
 function Cell({ v, className = "" }: { v: number | null; className?: string }) {
