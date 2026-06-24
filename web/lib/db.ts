@@ -10,9 +10,10 @@ const isLocal = url.includes("localhost") || url.includes("127.0.0.1");
 export const sql =
   g._sql ??
   postgres(url, {
-    // Serverless (Vercel) reuses few connections — keep the pool tiny in prod.
+    // Small pool in prod (Neon's pooled endpoint multiplexes anyway); a few
+    // connections speed up the static prerender at build time.
     // Cloud Postgres (Neon/Supabase) requires SSL; localhost does not.
-    max: isLocal ? 5 : 1,
+    max: isLocal ? 5 : 3,
     idle_timeout: 20,
     ssl: isLocal ? false : "require",
   });
